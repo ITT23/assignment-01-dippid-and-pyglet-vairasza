@@ -1,14 +1,15 @@
 class Font:
   NAME = "Verdana"
-  SIZE = 12
+  SIZE = 15
 
 class Window:
   WIDTH = 600
   HEIGTH = 800
 
-class ASSET:
+class Asset:
   INTRO = "./asset/intro.png"
   GAME_END = "./asset/game_end.png"
+  BACKGROUND = "./asset/background.png"
 
 class HUD:
   TITLE = "BREAKOUT"
@@ -38,8 +39,8 @@ class HUD:
   GAME_END_BG_TEXT_Y = 400
 
 class Brick:
-  WIDTH = 40
-  HEIGTH = 10
+  WIDTH = 70
+  HEIGTH = 20
   #red, orange, green, yellow
   COLOUR = [(163, 30, 10), (194, 133, 10), (10, 133, 51), (194, 194, 42)]
 
@@ -65,16 +66,16 @@ class World:
   END_X = Window.WIDTH
   START_Y = 0
   END_Y = Window.HEIGTH - HUD.HEIGTH
-  COLOUR = (11, 11, 11)
 
 class Input:
   PORT = 5700
 
 class Level1:
   BALL_SPEED = 5
-  BRICKS_PER_ROW = 14
+  BRICKS_PER_ROW = 8
   COLUMNS = 8
   START_X = World.START_X
   START_Y = World.END_Y - 40
   GAP = (Window.WIDTH - (BRICKS_PER_ROW * Brick.WIDTH)) / (BRICKS_PER_ROW - 1)
+
   
