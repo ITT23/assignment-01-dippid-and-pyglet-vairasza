@@ -31,7 +31,7 @@ class AppState(Enum):
 class Ball(Circle):
 
   def __init__(self, speed: float, batch: Batch) -> None:
-    super().__init__(x=C.Ball.START_X, y=C.Ball.START_Y, radius=C.Ball.RADIUS, color=C.Ball.COLOUR, batch=batch)
+    super().__init__(x=C.Ball.START_X, y=C.Ball.START_Y, radius=C.Ball.RADIUS, color=C.Colour.BALL, batch=batch)
     self.dir_x = C.Ball.START_DIR_X
     self.dir_y = C.Ball.START_DIR_Y
     self.speed = speed
@@ -46,7 +46,7 @@ class Ball(Circle):
   def change_dir_y(self) -> None:
     self.dir_y = self.dir_y * - 1
 
-  def distance(self, p_1: Vec2, p_2: Vec2) -> bool:
+  def check_distance(self, p_1: Vec2, p_2: Vec2) -> bool:
     ball_to_p1 = Vec2(p_1.x - self.x, p_1.y - self.y)
     ball_to_p2 = Vec2(p_2.x - self.x, p_2.y - self.y)
 
@@ -64,22 +64,22 @@ class World:
     self.bot_right = Vec2(C.World.END_X, C.World.START_Y)
 
   def collides_with(self, ball: Ball, on_game_over: Callable[[], None]) -> None:
-    if ball.distance(self.bot_left, self.top_left):
+    if ball.check_distance(self.bot_left, self.top_left):
       ball.change_dir_x()
 
-    elif ball.distance(self.bot_right, self.top_right):
+    elif ball.check_distance(self.bot_right, self.top_right):
       ball.change_dir_x()
 
-    elif ball.distance(self.top_left, self.top_right):
+    elif ball.check_distance(self.top_left, self.top_right):
       ball.change_dir_y()
 
-    elif ball.distance(self.bot_left, self.bot_right):
+    elif ball.check_distance(self.bot_left, self.bot_right):
       on_game_over()
 
 class Paddle(Rectangle):
 
   def __init__(self, speed: float, batch: Batch) -> None:
-    super().__init__(x=C.Paddle.START_X, y=C.Paddle.START_Y, width=C.Paddle.WIDTH, height=C.Paddle.HEIGTH, color=C.Paddle.COLOUR, batch=batch)
+    super().__init__(x=C.Paddle.START_X, y=C.Paddle.START_Y, width=C.Paddle.WIDTH, height=C.Paddle.HEIGTH, color=C.Colour.PADDLE, batch=batch)
     self.speed = speed
 
   def move(self, acc_x: float, world: World) -> None:
@@ -92,7 +92,7 @@ class Paddle(Rectangle):
     v_top_right = Vec2(self.x + self.width, self.y + self.height)
     v_top_left = Vec2(self.x, self.y + self.height)
 
-    if ball.distance(v_top_left, v_top_right) and self.x <= ball.x and self.x + self.width >= ball.x:
+    if ball.check_distance(v_top_left, v_top_right) and self.x <= ball.x and self.x + self.width >= ball.x:
       ball.change_dir_y()
 
 class Brick(Rectangle):
@@ -106,25 +106,25 @@ class Brick(Rectangle):
     v_top_right = Vec2(self.x + self.width, self.y + self.height)
     v_top_left = Vec2(self.x, self.y + self.height)
     
-    if ball.distance(v_bot_left, v_bot_right) and v_bot_left.x <= ball.x and v_bot_right.x >= ball.x:
+    if ball.check_distance(v_bot_left, v_bot_right) and v_bot_left.x <= ball.x and v_bot_right.x >= ball.x:
       ball.change_dir_y()
       self.delete()
 
       return True
 
-    elif ball.distance(v_top_left, v_top_right) and v_top_left.x <= ball.x and v_top_right.x >= ball.x:
+    elif ball.check_distance(v_top_left, v_top_right) and v_top_left.x <= ball.x and v_top_right.x >= ball.x:
       ball.change_dir_y()
       self.delete()
 
       return True
 
-    elif ball.distance(v_bot_left, v_top_left) and v_bot_left.y <= ball.y and v_top_left.y >= ball.y:
+    elif ball.check_distance(v_bot_left, v_top_left) and v_bot_left.y <= ball.y and v_top_left.y >= ball.y:
         ball.change_dir_x()
         self.delete()
 
         return True
           
-    elif ball.distance(v_bot_right, v_top_right) and v_bot_right.y <= ball.y and v_top_right.y >= ball.y:
+    elif ball.check_distance(v_bot_right, v_top_right) and v_bot_right.y <= ball.y and v_top_right.y >= ball.y:
         ball.change_dir_x()
         self.delete()
 
@@ -184,10 +184,10 @@ class HUD:
   def __init__(self, batch: Batch) -> None:
     self.background_image = image.load(C.Asset.BACKGROUND)
     self.background_sprite = Sprite(img=self.background_image, x=0, y=0, batch=batch)
-    self.background_hud = Rectangle(x=C.HUD.START_X, y=C.HUD.START_Y, width=C.HUD.WIDTH, height=C.HUD.HEIGTH, color=C.HUD.COLOUR, batch=batch)
-    self.game_name = Label(text=C.HUD.TITLE, font_name=C.Font.NAME, font_size=C.Font.SIZE, color=C.HUD.TEXT_COLOUR, x=C.HUD.TEXT_X, y=C.HUD.TEXT_Y, bold=True, batch=batch)
-    self.game_level = Label(text=f"{C.HUD.LEVEL_TEXT} 1", font_name=C.Font.NAME, font_size=C.Font.SIZE, color=C.HUD.TEXT_COLOUR, x=C.HUD.LEVEL_X, y=C.HUD.LEVEL_Y, batch=batch)
-    self.game_score = Label(text=f"{C.HUD.SCORE_TEXT} 0", font_name=C.Font.NAME, font_size=C.Font.SIZE, color=C.HUD.TEXT_COLOUR, x=C.HUD.SCORE_X, y=C.HUD.SCORE_Y, batch=batch)
+    self.background_hud = Rectangle(x=C.HUD.START_X, y=C.HUD.START_Y, width=C.HUD.WIDTH, height=C.HUD.HEIGTH, color=C.Colour.HUD, batch=batch)
+    self.game_name = Label(text=C.HUD.TITLE, font_name=C.Font.NAME, font_size=C.Font.SMALL, color=C.Colour.TEXT, x=C.HUD.TEXT_X, y=C.HUD.TEXT_Y, bold=True, batch=batch)
+    self.game_level = Label(text=f"{C.HUD.LEVEL_TEXT} 1", font_name=C.Font.NAME, font_size=C.Font.SMALL, color=C.Colour.TEXT, x=C.HUD.LEVEL_X, y=C.HUD.LEVEL_Y, batch=batch)
+    self.game_score = Label(text=f"{C.HUD.SCORE_TEXT} 0", font_name=C.Font.NAME, font_size=C.Font.SMALL, color=C.Colour.TEXT, x=C.HUD.SCORE_X, y=C.HUD.SCORE_Y, batch=batch)
 
   def update_level(self, level: int) -> None:
     self.game_level.text = f"{C.HUD.LEVEL_TEXT} {level}"
@@ -203,12 +203,19 @@ class Menu:
     self._intro_image = image.load(C.Asset.INTRO)
     self.intro_sprite = Sprite(img=self._intro_image, x=0, y=0, z=10)
 
-    self._game_end_label = Label(text=C.HUD.GAME_END_BG_TEXT, font_name=C.Font.NAME, font_size=C.HUD.GAME_END_BG_TEXT_SIZE, bold=True, color=C.HUD.GAME_END_BG_TEXT_COLOUR, x=C.HUD.GAME_END_BG_TEXT_X, y=C.HUD.GAME_END_BG_TEXT_Y, z=11)
+    self._game_end_level = Label(text=C.HUD.GAME_END_TEXT_LEVEL, font_name=C.Font.NAME, font_size=C.Font.LARGE, bold=True, color=C.Colour.TEXT, x=C.HUD.GAME_END_TEXT_X, y=C.HUD.GAME_END_TEXT_LEVEL_Y, z=11)
+    self._game_end_score = Label(text=C.HUD.GAME_END_TEXT_SCORE, font_name=C.Font.NAME, font_size=C.Font.LARGE, bold=True, color=C.Colour.TEXT, x=C.HUD.GAME_END_TEXT_X, y=C.HUD.GAME_END_TEXT_SCORE_Y, z=11)
 
-  def show_game_end(self, score: int, level: int) -> None:
+  def show_game_end(self, level: int, score: int) -> None:
     self.game_end_sprite.draw()
-    self._game_end_label.text = C.HUD.GAME_END_BG_TEXT.replace("XX", str(score)).replace("YY", str(level))
-    self._game_end_label.draw()
+    self._game_end_level.text = C.HUD.GAME_END_TEXT_LEVEL.replace("XXX", str(level))
+    self._game_end_score.text = C.HUD.GAME_END_TEXT_SCORE.replace("XXX", str(score))
+
+    self._game_end_level.x = C.Window.WIDTH / 2 - (self._game_end_level.content_width / 2)
+    self._game_end_score.x = C.Window.WIDTH / 2 - (self._game_end_score.content_width / 2)
+
+    self._game_end_level.draw()
+    self._game_end_score.draw()
 
   def show_intro(self) -> None:
     self.intro_sprite.draw()
@@ -216,24 +223,27 @@ class Menu:
 class Game:
 
   def init(self) -> None:
-    self.batch = Batch()
-    self.world = World()
-    self.hud = HUD(self.batch)
-    self.ball = Ball(C.Level1.BALL_SPEED, self.batch)
-    self.paddle = Paddle(C.Paddle.SPEED, self.batch)
-    self.bricks = self._init_bricks()
-
+    self.levels = [C.Level1, C.Level2, C.Level3]
     self.level = 1
     self.score = 0
 
-  def _init_bricks(self) -> list[Brick]:
-    brick_list = []
+    self.batch = Batch()
+    self.world = World()
+    self.hud = HUD(self.batch)
+    self.ball = Ball(self.levels[0].BALL_SPEED, self.batch)
+    self.paddle = Paddle(C.Paddle.SPEED, self.batch)
+    self.bricks = []
+    self._init_bricks(self.levels[0].MAP)
 
-    for row in range(C.Level1.BRICKS_PER_ROW):
-      for col in range(C.Level1.COLUMNS):
-        brick_list.append(Brick(C.Level1.START_X + row * C.Brick.WIDTH + (row - 1) * C.Level1.GAP, C.Level1.START_Y - (col * C.Brick.HEIGTH + (col - 1) * C.Level1.GAP), C.Brick.COLOUR[1], self.batch))
+  def _init_bricks(self, bricks_map: list[list]) -> None:
+    self.bricks = []
 
-    return brick_list
+    for row_key, row_val in enumerate(bricks_map):
+      for col_key, col_val in enumerate(row_val):
+        if col_val is not None:
+          x = C.Brick.START_X + col_key * C.Brick.WIDTH + (col_key - 1) * C.Brick.GAP
+          y = C.Brick.START_Y - row_key * C.Brick.HEIGTH - (row_key - 1) * C.Brick.GAP
+          self.bricks.append(Brick(x=x, y=y, colour=col_val, batch=self.batch))
   
   def process(self, acc_x: float, on_game_over: Callable[[], None]) -> None:
     self.paddle.move(acc_x, self.world)
@@ -241,10 +251,21 @@ class Game:
 
     self._check_collisions(on_game_over)
 
+
     if len(self.bricks) == 0:
-      on_game_over()
+      if len(self.levels) == self.level:
+        on_game_over()
+      else:
+        self._next_level()
 
     self.batch.draw()
+
+  def _next_level(self) -> None:
+    self.level = self.level + 1
+    self.hud.update_level(self.level)
+    self.ball.speed = self.levels[self.level - 1].BALL_SPEED
+    self._init_bricks(self.levels[self.level - 1].MAP)
+
 
   def _check_collisions(self, on_game_over: Callable[[], None]) -> None:
     self.world.collides_with(self.ball, on_game_over)
