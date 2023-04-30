@@ -23,6 +23,9 @@ import configuration as C
   
 '''
 
+#code reference: https://docs.pyglet.org/en/latest/programming_guide/resources.html: avoid that the resource can not be found due to starting the game from a different path. therefore introducing relative path to the resources folder.
+script_dir = os.path.dirname(__file__)
+
 class AppState(Enum):
   START = 1
   GAME = 2
@@ -211,8 +214,9 @@ class Input:
 
 class HUD:
   def __init__(self, batch: Batch) -> None:
-    self._background_image = image.load(C.Asset.BACKGROUND)
-    self._background_sprite = Sprite(img=self._background_image, x=0, y=0, batch=batch)
+    path = os.path.join(script_dir, C.Asset.BACKGROUND)
+    background_image = image.load(path)
+    self._background_sprite = Sprite(img=background_image, x=0, y=0, batch=batch)
     self._background_hud = Rectangle(x=C.HUD.START_X, y=C.HUD.START_Y, width=C.HUD.WIDTH, height=C.HUD.HEIGTH, color=C.Colour.HUD, batch=batch)
     self._game_name = Label(text=C.HUD.TITLE, font_name=C.Font.NAME, font_size=C.Font.SMALL, color=C.Colour.TEXT, x=C.HUD.TEXT_X, y=C.HUD.TEXT_Y, bold=True, batch=batch)
     self._game_level = Label(text=f"{C.HUD.LEVEL_TEXT} 1", font_name=C.Font.NAME, font_size=C.Font.SMALL, color=C.Colour.TEXT, x=C.HUD.LEVEL_X, y=C.HUD.LEVEL_Y, batch=batch)
@@ -226,11 +230,13 @@ class HUD:
 
 class Menu:
   def __init__(self) -> None:
-    self._game_end_image = image.load(C.Asset.GAME_END)
-    self._game_end_sprite = Sprite(img=self._game_end_image, x=0, y=0, z=10)
+    path = os.path.join(script_dir, C.Asset.GAME_END)
+    game_end_image = image.load(path)
+    self._game_end_sprite = Sprite(img=game_end_image, x=0, y=0, z=10)
 
-    self._intro_image = image.load(C.Asset.INTRO)
-    self._intro_sprite = Sprite(img=self._intro_image, x=0, y=0, z=10)
+    path = os.path.join(script_dir, C.Asset.INTRO)
+    intro_image = image.load(path)
+    self._intro_sprite = Sprite(img=intro_image, x=0, y=0, z=10)
 
     self._game_end_level = Label(text=C.HUD.GAME_END_TEXT_LEVEL, font_name=C.Font.NAME, font_size=C.Font.LARGE, bold=True, color=C.Colour.TEXT, x=C.HUD.GAME_END_TEXT_X, y=C.HUD.GAME_END_TEXT_LEVEL_Y, z=11)
     self._game_end_score = Label(text=C.HUD.GAME_END_TEXT_SCORE, font_name=C.Font.NAME, font_size=C.Font.LARGE, bold=True, color=C.Colour.TEXT, x=C.HUD.GAME_END_TEXT_X, y=C.HUD.GAME_END_TEXT_SCORE_Y, z=11)
