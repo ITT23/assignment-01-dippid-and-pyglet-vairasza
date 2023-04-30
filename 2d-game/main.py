@@ -9,6 +9,7 @@ from pyglet.sprite import Sprite
 from pyglet.shapes import *
 from pyglet.graphics import Batch
 from pyglet.math import Vec2
+from pyglet.clock import schedule_once
 
 import configuration as C
 
@@ -57,7 +58,7 @@ class Ball(Circle):
 
     distance = abs(cross_product) / ball_to_p1.distance(ball_to_p2)
 
-    return distance - self.radius <= 0
+    return distance - self.radius < 0
 
 class World:
   def __init__(self) -> None:
@@ -83,27 +84,42 @@ class Paddle(Rectangle):
 
   def __init__(self, velocity: float, batch: Batch) -> None:
     super().__init__(x=C.Paddle.START_X, y=C.Paddle.START_Y, width=C.Paddle.WIDTH, height=C.Paddle.HEIGTH, color=C.Colour.PADDLE, batch=batch)
-    self.velocity = velocity
+    self._velocity = velocity
+    '''
+      after the paddle is hit it get immunity to interaction with the ball, therefore there are no possible further bounces in a defined timeframe. this is due to a bug where the ball sticks and flows over the paddle when it hit the paddle in a certain angle while the paddle is moving. immunity enforces that the ball left the area until the paddle can interact again.
+    '''
+    self._immunity = False
 
   def move(self, acc_x: float, world: World) -> None:
-    new_x = self.x + (acc_x * self.velocity)
+    new_x = self.x + (acc_x * self._velocity)
 
     if new_x >= world.bot_left.x and new_x <= world.bot_right.x - self.width:
       self.x = new_x
 
+  def _reset_immunity(self, dt) -> None:
+    self._immunity = False
+
   def collides_with(self, ball: Ball) -> None:
+    if self._immunity:
+      return
+    
     v_top_right = Vec2(self.x + self.width, self.y + self.height)
     v_top_left = Vec2(self.x, self.y + self.height)
     v_bot_left = Vec2(self.x, self.y)
     v_bot_right = Vec2(self.x + self.width, self.y)
 
     if ball.check_distance(v_top_left, v_top_right) and self.x <= ball.x and self.x + self.width >= ball.x:
-      ball.change_dir_y()
+        ball.change_dir_y()
+        self._immunity = True
+        schedule_once(func=self._reset_immunity, delay=C.Paddle.IMMUNITY)
 
-    #hitting the ball with the sides of the paddle pushes it straight back instead of bouncing it of in the same angle
+    #hitting the ball with the sides of the paddle pushes it straight back instead of bouncing it of with the negative angle which would lead to game over.
     elif (ball.check_distance(v_bot_left, v_top_left) or ball.check_distance(v_bot_right, v_top_right)) and self.y <= ball.y and self.y + self.height >= ball.y:
       ball.change_dir_y()
       ball.change_dir_x()
+
+      self._immunity = True
+      schedule_once(func=self._reset_immunity, delay=C.Paddle.IMMUNITY)
 
 class Brick(Rectangle):
 
@@ -320,12 +336,12 @@ class Application():
       self.app_state = AppState.GAME
       self.game.init()
 
-    #appstate defines if intro, game or game_end screen is drawn
+    #appstate defines if intro, game or game_end screen is shown
     if self.app_state == AppState.START:
       self.menu.show_intro()
 
     elif self.app_state == AppState.END:
-      self.menu.show_game_end(self.game.score, self.game.level)
+      self.menu.show_game_end(self.game.level, self.game.score)
 
     elif self.app_state == AppState.EXIT:
       #Code Reference: https://stackoverflow.com/a/76374: choosing to use os._exit() here because pyglet.app.exit() does not terminate the application, while window.close() produced an error. quit() and exit() also did not work. this might be due to the event loop running in a different thread.

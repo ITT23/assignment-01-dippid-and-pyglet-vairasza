@@ -70,6 +70,7 @@ class Paddle:
   START_X = (Window.WIDTH / 2) - (WIDTH / 2)
   START_Y = 10
   VELOCITY = 15
+  IMMUNITY = 0.5
 
 class Ball:
   RADIUS = 7
