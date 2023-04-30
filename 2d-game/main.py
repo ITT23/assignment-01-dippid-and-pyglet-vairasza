@@ -1,5 +1,5 @@
 import os
-from typing import Callable
+from typing import Callable, TypedDict
 from enum import Enum
 
 from DIPPID import SensorUDP
@@ -13,7 +13,7 @@ from pyglet.math import Vec2
 import configuration as C
 
 '''
-  Code References:
+  Ideas for Naming:
   - https://en.wikipedia.org/wiki/Breakout_(video_game)
 
   Image References:
@@ -30,23 +30,26 @@ class AppState(Enum):
 
 class Ball(Circle):
 
-  def __init__(self, speed: float, batch: Batch) -> None:
+  def __init__(self, velocity: float, batch: Batch) -> None:
     super().__init__(x=C.Ball.START_X, y=C.Ball.START_Y, radius=C.Ball.RADIUS, color=C.Colour.BALL, batch=batch)
     self.dir_x = C.Ball.START_DIR_X
     self.dir_y = C.Ball.START_DIR_Y
-    self.speed = speed
+    self.velocity = velocity
 
   def move(self) -> None:
-    self.x = self.x + (self.dir_x * self.speed)
-    self.y = self.y + (self.dir_y * self.speed)
+    self.x = self.x + (self.dir_x * self.velocity)
+    self.y = self.y + (self.dir_y * self.velocity)
 
-  def change_dir_x(self) -> None:
-    self.dir_x = self.dir_x * - 1
+  def change_dir_x(self, direction=-1) -> None:
+    self.dir_x = self.dir_x * direction
 
-  def change_dir_y(self) -> None:
-    self.dir_y = self.dir_y * - 1
+  def change_dir_y(self, direction=-1) -> None:
+    self.dir_y = self.dir_y * direction
 
   def check_distance(self, p_1: Vec2, p_2: Vec2) -> bool:
+    '''
+      calculate the distance between a side represented by two vectors and the ball. reducing the distance between the side and the center of the ball by the radius of the ball, yields if the ball collided with a side.
+    '''
     ball_to_p1 = Vec2(p_1.x - self.x, p_1.y - self.y)
     ball_to_p2 = Vec2(p_2.x - self.x, p_2.y - self.y)
 
@@ -78,12 +81,12 @@ class World:
 
 class Paddle(Rectangle):
 
-  def __init__(self, speed: float, batch: Batch) -> None:
+  def __init__(self, velocity: float, batch: Batch) -> None:
     super().__init__(x=C.Paddle.START_X, y=C.Paddle.START_Y, width=C.Paddle.WIDTH, height=C.Paddle.HEIGTH, color=C.Colour.PADDLE, batch=batch)
-    self.speed = speed
+    self.velocity = velocity
 
   def move(self, acc_x: float, world: World) -> None:
-    new_x = self.x + (acc_x * self.speed)
+    new_x = self.x + (acc_x * self.velocity)
 
     if new_x >= world.bot_left.x and new_x <= world.bot_right.x - self.width:
       self.x = new_x
@@ -91,9 +94,16 @@ class Paddle(Rectangle):
   def collides_with(self, ball: Ball) -> None:
     v_top_right = Vec2(self.x + self.width, self.y + self.height)
     v_top_left = Vec2(self.x, self.y + self.height)
+    v_bot_left = Vec2(self.x, self.y)
+    v_bot_right = Vec2(self.x + self.width, self.y)
 
     if ball.check_distance(v_top_left, v_top_right) and self.x <= ball.x and self.x + self.width >= ball.x:
       ball.change_dir_y()
+
+    #hitting the ball with the sides of the paddle pushes it straight back instead of bouncing it of in the same angle
+    elif (ball.check_distance(v_bot_left, v_top_left) or ball.check_distance(v_bot_right, v_top_right)) and self.y <= ball.y and self.y + self.height >= ball.y:
+      ball.change_dir_y()
+      ball.change_dir_x()
 
 class Brick(Rectangle):
 
@@ -133,6 +143,9 @@ class Brick(Rectangle):
     return False
 
 class Input:
+
+  T_Input_State = TypedDict('InputState', { 'acc_x': float, 'button_1': bool, 'button_2': bool })
+
   def __init__(self) -> None:
     self._sensor = SensorUDP(C.Input.PORT)
     self._button_pressed = {
@@ -169,7 +182,7 @@ class Input:
     except:
       return False
   
-  def update(self) -> dict:
+  def get_state(self) -> T_Input_State:
     acc_x = self._get_acc_x()
     button_1 = self._get_button('button_1')
     button_2 = self._get_button('button_2')
@@ -182,32 +195,32 @@ class Input:
 
 class HUD:
   def __init__(self, batch: Batch) -> None:
-    self.background_image = image.load(C.Asset.BACKGROUND)
-    self.background_sprite = Sprite(img=self.background_image, x=0, y=0, batch=batch)
-    self.background_hud = Rectangle(x=C.HUD.START_X, y=C.HUD.START_Y, width=C.HUD.WIDTH, height=C.HUD.HEIGTH, color=C.Colour.HUD, batch=batch)
-    self.game_name = Label(text=C.HUD.TITLE, font_name=C.Font.NAME, font_size=C.Font.SMALL, color=C.Colour.TEXT, x=C.HUD.TEXT_X, y=C.HUD.TEXT_Y, bold=True, batch=batch)
-    self.game_level = Label(text=f"{C.HUD.LEVEL_TEXT} 1", font_name=C.Font.NAME, font_size=C.Font.SMALL, color=C.Colour.TEXT, x=C.HUD.LEVEL_X, y=C.HUD.LEVEL_Y, batch=batch)
-    self.game_score = Label(text=f"{C.HUD.SCORE_TEXT} 0", font_name=C.Font.NAME, font_size=C.Font.SMALL, color=C.Colour.TEXT, x=C.HUD.SCORE_X, y=C.HUD.SCORE_Y, batch=batch)
+    self._background_image = image.load(C.Asset.BACKGROUND)
+    self._background_sprite = Sprite(img=self._background_image, x=0, y=0, batch=batch)
+    self._background_hud = Rectangle(x=C.HUD.START_X, y=C.HUD.START_Y, width=C.HUD.WIDTH, height=C.HUD.HEIGTH, color=C.Colour.HUD, batch=batch)
+    self._game_name = Label(text=C.HUD.TITLE, font_name=C.Font.NAME, font_size=C.Font.SMALL, color=C.Colour.TEXT, x=C.HUD.TEXT_X, y=C.HUD.TEXT_Y, bold=True, batch=batch)
+    self._game_level = Label(text=f"{C.HUD.LEVEL_TEXT} 1", font_name=C.Font.NAME, font_size=C.Font.SMALL, color=C.Colour.TEXT, x=C.HUD.LEVEL_X, y=C.HUD.LEVEL_Y, batch=batch)
+    self._game_score = Label(text=f"{C.HUD.SCORE_TEXT} 0", font_name=C.Font.NAME, font_size=C.Font.SMALL, color=C.Colour.TEXT, x=C.HUD.SCORE_X, y=C.HUD.SCORE_Y, batch=batch)
 
   def update_level(self, level: int) -> None:
-    self.game_level.text = f"{C.HUD.LEVEL_TEXT} {level}"
+    self._game_level.text = f"{C.HUD.LEVEL_TEXT} {level}"
 
   def update_score(self, score: int) -> None:
-    self.game_score.text = f"{C.HUD.SCORE_TEXT} {score}"
+    self._game_score.text = f"{C.HUD.SCORE_TEXT} {score}"
 
 class Menu:
   def __init__(self) -> None:
     self._game_end_image = image.load(C.Asset.GAME_END)
-    self.game_end_sprite = Sprite(img=self._game_end_image, x=0, y=0, z=10)
+    self._game_end_sprite = Sprite(img=self._game_end_image, x=0, y=0, z=10)
 
     self._intro_image = image.load(C.Asset.INTRO)
-    self.intro_sprite = Sprite(img=self._intro_image, x=0, y=0, z=10)
+    self._intro_sprite = Sprite(img=self._intro_image, x=0, y=0, z=10)
 
     self._game_end_level = Label(text=C.HUD.GAME_END_TEXT_LEVEL, font_name=C.Font.NAME, font_size=C.Font.LARGE, bold=True, color=C.Colour.TEXT, x=C.HUD.GAME_END_TEXT_X, y=C.HUD.GAME_END_TEXT_LEVEL_Y, z=11)
     self._game_end_score = Label(text=C.HUD.GAME_END_TEXT_SCORE, font_name=C.Font.NAME, font_size=C.Font.LARGE, bold=True, color=C.Colour.TEXT, x=C.HUD.GAME_END_TEXT_X, y=C.HUD.GAME_END_TEXT_SCORE_Y, z=11)
 
   def show_game_end(self, level: int, score: int) -> None:
-    self.game_end_sprite.draw()
+    self._game_end_sprite.draw()
     self._game_end_level.text = C.HUD.GAME_END_TEXT_LEVEL.replace("XXX", str(level))
     self._game_end_score.text = C.HUD.GAME_END_TEXT_SCORE.replace("XXX", str(score))
 
@@ -218,7 +231,7 @@ class Menu:
     self._game_end_score.draw()
 
   def show_intro(self) -> None:
-    self.intro_sprite.draw()
+    self._intro_sprite.draw()
 
 class Game:
 
@@ -230,8 +243,8 @@ class Game:
     self.batch = Batch()
     self.world = World()
     self.hud = HUD(self.batch)
-    self.ball = Ball(self.levels[0].BALL_SPEED, self.batch)
-    self.paddle = Paddle(C.Paddle.SPEED, self.batch)
+    self.ball = Ball(self.levels[0].BALL_VELOCITY, self.batch)
+    self.paddle = Paddle(C.Paddle.VELOCITY, self.batch)
     self.bricks = []
     self._init_bricks(self.levels[0].MAP)
 
@@ -245,12 +258,11 @@ class Game:
           y = C.Brick.START_Y - row_key * C.Brick.HEIGTH - (row_key - 1) * C.Brick.GAP
           self.bricks.append(Brick(x=x, y=y, colour=col_val, batch=self.batch))
   
-  def process(self, acc_x: float, on_game_over: Callable[[], None]) -> None:
+  def run(self, acc_x: float, on_game_over: Callable[[], None]) -> None:
     self.paddle.move(acc_x, self.world)
     self.ball.move()
 
     self._check_collisions(on_game_over)
-
 
     if len(self.bricks) == 0:
       if len(self.levels) == self.level:
@@ -263,7 +275,7 @@ class Game:
   def _next_level(self) -> None:
     self.level = self.level + 1
     self.hud.update_level(self.level)
-    self.ball.speed = self.levels[self.level - 1].BALL_SPEED
+    self.ball.velocity = self.levels[self.level - 1].BALL_VELOCITY
     self._init_bricks(self.levels[self.level - 1].MAP)
 
 
@@ -286,13 +298,21 @@ class Application():
     self.input = Input()
     self.game = Game()
     self.menu = Menu()
-    self.input_state = self.input.update()
+    self.input_state = self.input.get_state()
     self.app_state = AppState.START
   
   def run(self) -> None:
     app.run()
 
-  def process_input_state(self) -> None:
+  def _on_game_over(self) -> None:
+    self.app_state = AppState.END
+
+  def on_draw(self) -> None:
+    self.window.clear()
+
+    self.input_state = self.input.get_state()
+
+    #process button presses
     if self.input_state['button_1']:
       self.app_state = AppState.EXIT
     
@@ -300,15 +320,7 @@ class Application():
       self.app_state = AppState.GAME
       self.game.init()
 
-  def on_game_over(self) -> None:
-    self.app_state = AppState.END
-
-  def on_draw(self) -> None:
-    self.window.clear()
-
-    self.input_state = self.input.update()
-    self.process_input_state()
-
+    #appstate defines if intro, game or game_end screen is drawn
     if self.app_state == AppState.START:
       self.menu.show_intro()
 
@@ -319,8 +331,8 @@ class Application():
       #Code Reference: https://stackoverflow.com/a/76374: choosing to use os._exit() here because pyglet.app.exit() does not terminate the application, while window.close() produced an error. quit() and exit() also did not work. this might be due to the event loop running in a different thread.
       os._exit(0)
 
-    else:
-      self.game.process(self.input_state['acc_x'], self.on_game_over)
+    elif self.app_state == AppState.GAME:
+      self.game.run(self.input_state['acc_x'], self._on_game_over)
 
 application = Application()
 application.run()

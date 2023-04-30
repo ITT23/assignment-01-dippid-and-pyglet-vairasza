@@ -69,7 +69,7 @@ class Paddle:
   HEIGTH = 15
   START_X = (Window.WIDTH / 2) - (WIDTH / 2)
   START_Y = 10
-  SPEED = 15
+  VELOCITY = 15
 
 class Ball:
   RADIUS = 7
@@ -79,7 +79,7 @@ class Ball:
   START_DIR_Y = 1
 
 class Level1:
-  BALL_SPEED = 5
+  BALL_VELOCITY = 5
   MAP = [
     [None, None, None, None, None, None, None, None],
     [None, None, None, None, None, None, None, None],
@@ -96,7 +96,7 @@ class Level1:
   ]
 
 class Level2:
-  BALL_SPEED = 7
+  BALL_VELOCITY = 7
   MAP = [
     [Colour.Y, None, None, None, None, None, None, Colour.Y],
     [None, None, None, None, None, None, None, None],
@@ -113,7 +113,7 @@ class Level2:
   ]
 
 class Level3:
-  BALL_SPEED = 10
+  BALL_VELOCITY = 10
   MAP = [
     [Colour.Y, Colour.Y, Colour.Y, Colour.Y, Colour.Y, Colour.Y, Colour.Y, Colour.Y],
     [Colour.Y, Colour.Y, Colour.Y, Colour.Y, Colour.Y, Colour.Y, Colour.Y, Colour.Y],

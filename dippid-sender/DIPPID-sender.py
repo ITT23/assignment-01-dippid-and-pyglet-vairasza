@@ -6,6 +6,7 @@ Notes:
 '''
 
 import socket, time, json, math, random
+from typing import TypedDict
 
 class Button:
   '''
@@ -17,7 +18,7 @@ class Button:
       self.status = 0
       self._threshold = 0.8
 
-  def rand_switch(self, one_sec_mark) -> None:
+  def rand_switch(self, one_sec_mark: bool) -> None:
     '''
       this function switches the status of the buttom from 0 to 1 and vice versa.
       the relative temporal interval between a switch should always be the same.
@@ -40,6 +41,9 @@ class Accelerometer:
     - M5Stack sends float values with 2 digits after decimal point.
     - accelerometer sends values in 3 axis. (e.g. {'x': 0.01, 'y': -0.07, 'z': 0.96} )
   '''
+
+  T_Input_State = TypedDict('InputState', { 'x': str, 'y': str, 'z': str })
+
   def __init__(self) -> None:
     self.x, self.y, self.z = 0, 0, 0
     '''
@@ -53,7 +57,7 @@ class Accelerometer:
 
     self._noise_variation = 0.03
 
-  def update(self, counter) -> None:
+  def update(self, counter: int) -> None:
     '''
       x, y and z values are dependant of COUNTER. they also have a frequency which is a random
       int between 1 and 100. Adding a small portion of noise to each axis.
@@ -66,7 +70,7 @@ class Accelerometer:
     self.y = math.sin(counter * 2 * math.pi * self._freq_y) + noise_y
     self.z = math.sin(counter * 2 * math.pi * self._freq_z) + noise_z
   
-  def to_dict(self) -> dict:
+  def to_dict(self) -> T_Input_State:
     '''
       returns x, y and z values in dictionary format so that it resembles the format
       of M5Stack. Numbers are formated to two digits after decimal point.
